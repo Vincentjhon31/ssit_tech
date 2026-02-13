@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Search } from "lucide-react";
 import {
   getProductsAction,
   addProductAction,
@@ -100,6 +101,7 @@ export default function ManageProductsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [imageLoading, setImageLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchProducts = useCallback(async () => {
     const { data, error } = await getProductsAction();
@@ -234,6 +236,22 @@ export default function ManageProductsPage() {
     setDeleteTarget(null);
   };
 
+  const filteredProducts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+    if (!query) return products;
+
+    return products.filter((p) => {
+      const name = p.name?.toLowerCase() ?? "";
+      const description = p.description?.toLowerCase() ?? "";
+      const category = CATEGORY_LABELS[p.category]?.toLowerCase() ?? "";
+      return (
+        name.includes(query) ||
+        description.includes(query) ||
+        category.includes(query)
+      );
+    });
+  }, [products, searchTerm]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -253,7 +271,28 @@ export default function ManageProductsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Product list</CardTitle>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <CardTitle>Product list</CardTitle>
+            <div className="w-full max-w-xs">
+              <label htmlFor="manage-products-search" className="sr-only">
+                Search products
+              </label>
+              <div className="relative w-full">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <input
+                  id="manage-products-search"
+                  type="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search…"
+                  className="w-full rounded-full border border-input bg-muted/50 py-2 pl-9 pr-3 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -263,6 +302,10 @@ export default function ManageProductsPage() {
           ) : products.length === 0 ? (
             <p className="rounded-lg border border-dashed border-border bg-muted/30 py-8 text-center text-sm text-muted-foreground">
               No products yet. Click &quot;Add product&quot; to create one.
+            </p>
+          ) : filteredProducts.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border bg-muted/30 py-8 text-center text-sm text-muted-foreground">
+              No products match your search.
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -279,7 +322,7 @@ export default function ManageProductsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {filteredProducts.map((product) => (
                     <tr key={product.id} className="border-b border-border last:border-0">
                       <td className="py-3">
                         {product.image ? (
