@@ -55,8 +55,9 @@ export function Header() {
             })}
             <Link
               href="/credentials/client/login"
-              className="inline-flex items-center rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 hover:shadow-sm"
+              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 hover:shadow-sm"
             >
+              <CircleUserRound className="h-5 w-5" />
               Sign In
             </Link>
           </nav>
