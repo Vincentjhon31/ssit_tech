@@ -4,6 +4,7 @@ import { useState, useMemo, useTransition } from "react";
 import { Search } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ClientDigitalIdModal } from "@/components/admin/client-digital-id-modal";
+import { NoResultsAnimation } from "@/components/admin/no-results-animation";
 
 type ListUsersResponse = Awaited<ReturnType<ReturnType<typeof createAdminClient>["auth"]["admin"]["listUsers"]>>;
 type UserItem = NonNullable<ListUsersResponse["data"]>["users"][number];
@@ -77,9 +78,10 @@ export function AdminClientsContent({ clients: initialClients }: AdminClientsCon
       </div>
 
       {filteredClients.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-border bg-muted/30 py-12 text-center text-sm text-muted-foreground">
-          {initialClients.length === 0 ? "No registered clients." : "No clients match your search."}
-        </div>
+        <NoResultsAnimation 
+          message={initialClients.length === 0 ? "No registered clients." : "No clients match your search."}
+          isSearching={searchQuery.trim().length > 0}
+        />
       ) : (
         <>
           {/* Desktop Table View */}

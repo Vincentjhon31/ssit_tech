@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { Home, Box, Users, Mail, LogIn, CircleUserRound } from "lucide-react";
+import { Home, Box, Users, Mail } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Home },
@@ -43,7 +43,7 @@ export function Header() {
                 <Link
                   key={href}
                   href={href}
-                  className={`relative rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`relative rounded-full px-3 py-1.5 text-xs font-medium transition-all duration-200 ${
                     active
                       ? "bg-zinc-900 text-white shadow-sm"
                       : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
@@ -53,22 +53,7 @@ export function Header() {
                 </Link>
               );
             })}
-            <Link
-              href="/credentials/client/login"
-              className="inline-flex items-center gap-2 rounded-full border border-zinc-300 bg-white px-5 py-2 text-sm font-medium text-zinc-700 transition-all hover:border-zinc-400 hover:bg-zinc-50 hover:shadow-sm"
-            >
-              <CircleUserRound className="h-5 w-5" />
-              Sign In
-            </Link>
           </nav>
-
-          {/* Desktop sign in (mobile hidden) */}
-          <Link
-            href="/credentials/client/login"
-            className="text-zinc-600 transition-colors hover:text-zinc-900 lg:hidden"
-          >
-            <CircleUserRound className="h-7 w-7" />
-          </Link>
         </div>
       </header>
 

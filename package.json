@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@lottiefiles/dotlottie-web": "^0.64.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "@types/mapbox-gl": "^3.4.1",
@@ -17,6 +18,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
+    "framer-motion": "^12.34.2",
     "html2pdf.js": "^0.14.0",
     "lucide-react": "^0.563.0",
     "mapbox-gl": "^3.18.1",

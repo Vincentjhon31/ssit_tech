@@ -22,7 +22,7 @@ export default async function ClientLayout({
     redirect("/unauthenticated");
   }
 
-  const isAdmin = !!session?.user?.user_metadata?.is_admin;
+  const isAdmin = !!user?.user_metadata?.is_admin;
 
   if (isAdmin) {
     redirect("/unauthenticated");

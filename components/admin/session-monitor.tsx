@@ -21,6 +21,8 @@ export function SessionMonitor() {
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout | null = null;
+
     // Check if there's an existing valid session
     const checkSession = async () => {
       try {
@@ -31,11 +33,9 @@ export function SessionMonitor() {
           setSessionStartTime(now);
           
           // Set timeout for 5 hours
-          const timer = setTimeout(() => {
+          timer = setTimeout(() => {
             setShowSessionExpired(true);
           }, SESSION_TIMEOUT_MS);
-
-          return () => clearTimeout(timer);
         }
       } catch (error) {
         // Silently ignore "Refresh Token Not Found" and other session errors
@@ -64,6 +64,7 @@ export function SessionMonitor() {
     });
 
     return () => {
+      if (timer) clearTimeout(timer);
       subscription?.unsubscribe();
     };
   }, [router, supabase]);

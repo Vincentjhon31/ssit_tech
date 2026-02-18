@@ -1,59 +1,23 @@
-import Link from "next/link";
-import { HeroCarousel } from "@/components/hero-carousel";
+import { HeroSection } from "@/components/hero-section";
+import { CtaSection } from "@/components/cta-section";
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-100 font-sans text-zinc-900">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-6 pb-20 pt-16 md:px-10 md:pt-24">
-          {/* Copy */}
-          <div className="mx-auto mb-10 flex max-w-2xl flex-col items-center text-center md:mb-14">
-            <h1 className="text-3xl font-bold leading-[1.15] tracking-tight text-zinc-900 md:text-4xl lg:text-5xl">
-              A modern portal for&nbsp;growing client networks
-            </h1>
-            <p className="mt-4 max-w-xl text-base leading-relaxed text-zinc-500">
-              Centralize applications, credentials, and approvals in one place —
-              smooth for clients, full visibility for your team.
-            </p>
-            <div className="mt-8 flex items-center gap-3">
-              <Link
-                href="/credentials/client/login"
-                className="rounded-full bg-zinc-900 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800"
-              >
-                Get started
-              </Link>
-              <Link
-                href="#features"
-                className="rounded-full border border-zinc-200 px-6 py-2.5 text-sm font-medium text-zinc-700 transition hover:border-zinc-300 hover:bg-zinc-50"
-              >
-                Learn more
-              </Link>
-            </div>
-          </div>
-
-          {/* Gallery Slider */}
-          <div className="flex items-center justify-center">
-            <HeroCarousel />
-          </div>
-        </div>
-
-        {/* Subtle divider */}
-        <div className="h-px bg-zinc-100" />
-      </section>
+      <HeroSection />
 
       {/* Features */}
-      <section id="features" className="px-6 py-20 md:px-10">
-        <div className="mx-auto max-w-5xl">
-          <h2 className="text-center text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+      <section id="features" className="px-6 py-12 md:px-8 md:py-14">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-center text-2xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
             Everything you need
           </h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-sm leading-relaxed text-zinc-500 md:text-base">
+          <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-zinc-500 md:text-sm">
             Onboard clients, manage credentials, and stay audit-ready — all
             without spreadsheets or email threads.
           </p>
 
-          <div className="mt-14 grid gap-8 md:grid-cols-3">
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
             {[
               {
                 title: "Guided applications",
@@ -83,6 +47,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <CtaSection />
     </main>
   );
 }

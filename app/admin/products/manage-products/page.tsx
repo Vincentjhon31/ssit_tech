@@ -11,6 +11,7 @@ import {
   deleteProductAction,
 } from "@/app/admin/products/actions";
 import { CATEGORY_LABELS, type Product, type ProductCategory } from "@/lib/products";
+import { NoResultsAnimation } from "@/components/admin/no-results-animation";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -332,13 +333,9 @@ export default function ManageProductsPage() {
               Loading products…
             </p>
           ) : products.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border bg-muted/30 py-6 sm:py-8 lg:py-5 text-center text-xs sm:text-sm lg:text-xs text-muted-foreground p-6 sm:p-8 lg:p-5">
-              No products yet. Click &quot;Add product&quot; to create one.
-            </p>
+            <NoResultsAnimation message="No products yet" />
           ) : filteredProducts.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-border bg-muted/30 py-6 sm:py-8 lg:py-5 text-center text-xs sm:text-sm lg:text-xs text-muted-foreground p-6 sm:p-8 lg:p-5">
-              No products match your search.
-            </p>
+            <NoResultsAnimation message="No products match your search" isSearching={true} />
           ) : (
             <>
             <table className="w-full text-left border-t border-border">

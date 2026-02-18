@@ -6,6 +6,7 @@ import { useMemo, useState, useEffect, useTransition } from "react";
 import { LayoutGrid, List, Package, FilterX, Search } from "lucide-react";
 import { getProductsAction } from "@/app/admin/products/actions";
 import { CATEGORY_LABELS, type Product, type ProductCategory } from "@/lib/products";
+import { NoResultsAnimation } from "@/components/admin/no-results-animation";
 
 function parseCategories(searchParams: ReturnType<typeof useSearchParams>): ProductCategory[] {
   const raw = searchParams.get("categories");
@@ -323,46 +324,10 @@ export default function AdminProductsPage() {
         )}
 
         {!loading && filteredProducts.length === 0 && (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 px-4 sm:px-6 lg:px-4 py-12 sm:py-16 lg:py-10 text-center">
-            {categories.length > 0 ? (
-              <>
-                <div className="flex h-12 sm:h-14 lg:h-11 w-12 sm:w-14 lg:w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-                  <FilterX className="h-5 sm:h-7 lg:h-5 w-5 sm:w-7 lg:w-5" aria-hidden />
-                </div>
-                <h2 className="mt-3 sm:mt-4 lg:mt-3 text-base sm:text-lg lg:text-base font-semibold text-foreground">
-                  No products match your filters
-                </h2>
-                <p className="mt-1 sm:mt-1.5 lg:mt-1 max-w-sm text-xs sm:text-sm lg:text-xs text-muted-foreground">
-                  No products found for {categories.map((c) => CATEGORY_LABELS[c]).join(", ")}. Try clearing the category checkboxes in the sidebar or choose different categories.
-                </p>
-                <Link
-                  href="/admin/products"
-                  className="mt-4 sm:mt-6 lg:mt-3 inline-flex items-center gap-1.5 sm:gap-2 lg:gap-1 rounded-md bg-primary px-3 sm:px-4 lg:px-3 py-1.5 sm:py-2 lg:py-1 text-xs sm:text-sm lg:text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <FilterX className="h-3.5 sm:h-4 lg:h-3 w-3.5 sm:w-4 lg:w-3" aria-hidden />
-                  Clear filters
-                </Link>
-              </>
-            ) : (
-              <>
-                <div className="flex h-12 sm:h-14 lg:h-11 w-12 sm:w-14 lg:w-11 items-center justify-center rounded-full bg-muted/60 text-muted-foreground">
-                  <Package className="h-5 sm:h-7 lg:h-5 w-5 sm:w-7 lg:w-5" aria-hidden />
-                </div>
-                <h2 className="mt-3 sm:mt-4 lg:mt-3 text-base sm:text-lg lg:text-base font-semibold text-foreground">
-                  No products yet
-                </h2>
-                <p className="mt-1 sm:mt-1.5 lg:mt-1 max-w-sm text-xs sm:text-sm lg:text-xs text-muted-foreground">
-                  Get started by adding products. Use the button above to manage your product catalog.
-                </p>
-                <Link
-                  href="/admin/products/manage-products"
-                  className="mt-4 sm:mt-6 lg:mt-3 inline-flex items-center justify-center rounded-md bg-primary px-3 sm:px-4 lg:px-3 py-1.5 sm:py-2 lg:py-1 text-xs sm:text-sm lg:text-xs font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  Manage products
-                </Link>
-              </>
-            )}
-          </div>
+          <NoResultsAnimation 
+            message={categories.length > 0 ? "No products match your filters" : "No products yet"}
+            isSearching={searchTerm.trim().length > 0 || categories.length > 0}
+          />
         )}
       </div>
     </div>

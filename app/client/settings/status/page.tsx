@@ -92,21 +92,26 @@ function LogoPattern() {
     { top: "84%", left: "70%" },
     { top: "76%", left: "94%" },
   ];
+  
+  // Generate CSS rules dynamically to avoid inline styles
+  const cssRules = positions.map((pos, i) => 
+    `.watermark-item-${i} { top: ${pos.top}; left: ${pos.left}; }`
+  ).join('\n');
+  
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
-      {positions.map((pos, i) => (
-        <div
-          key={i}
-          className="absolute watermark-item"
-          style={{
-            top: pos.top,
-            left: pos.left,
-          }}
-        >
-          {watermark}
-        </div>
-      ))}
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: cssRules }} />
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        {positions.map((pos, i) => (
+          <div
+            key={i}
+            className={`absolute watermark-item watermark-item-${i}`}
+          >
+            {watermark}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import {
@@ -90,9 +91,9 @@ function SidebarNav() {
   };
 
   return (
-    <nav className="flex flex-1 flex-col gap-1 p-3">
-      <div className="flex-1 space-y-1">
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+    <nav className="flex flex-1 flex-col gap-4 md:gap-3 p-4 md:p-3">
+      <div className="flex-1 space-y-3 md:space-y-1">
+        <p className="hidden lg:block mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Main
         </p>
         {clientSidebarLinks.map(({ href, label, icon: Icon }) => {
@@ -103,10 +104,10 @@ function SidebarNav() {
               href={href}
               onClick={closeOnNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-xs active:scale-98"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -119,7 +120,7 @@ function SidebarNav() {
           );
         })}
 
-        <p className="mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <p className="hidden lg:block mb-2 mt-6 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Account
         </p>
         {clientSidebarFooterLinks.map(({ href, label, icon: Icon }) => {
@@ -130,10 +131,10 @@ function SidebarNav() {
               href={href}
               onClick={closeOnNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-xs active:scale-98"
               )}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
@@ -151,10 +152,10 @@ function SidebarNav() {
           <CollapsibleTrigger
             suppressHydrationWarning
             className={cn(
-              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out",
               isSettingsActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-xs active:scale-98"
             )}
           >
             <Settings className="h-5 w-5 shrink-0" aria-hidden />
@@ -177,10 +178,10 @@ function SidebarNav() {
                   href={href}
                   onClick={closeOnNavigate}
                   className={cn(
-                    "ml-8 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "ml-8 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ease-in-out",
                     active
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      ? "bg-primary/10 text-primary shadow-xs"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground hover:shadow-xs active:scale-98"
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" aria-hidden />
@@ -193,10 +194,10 @@ function SidebarNav() {
       </div>
       
       {/* Sign Out Button */}
-      <div className="border-t border-border pt-3">
+      <div className="mt-auto border-t border-border pt-4 md:pt-3">
         <Button
           variant="ghost"
-          className="w-full justify-start gap-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="w-full justify-start gap-3 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
           onClick={handleSignOut}
           disabled={isSigningOut}
         >
@@ -229,12 +230,25 @@ export function ClientSidebar() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="left"
-          className="w-56 border-border bg-card p-0 md:hidden"
-          showCloseButton={true}
+          className="w-56 border-border bg-card p-0 md:hidden overflow-y-auto"
+          showCloseButton={false}
         >
           <SheetTitle className="sr-only">Client navigation</SheetTitle>
-          <div className="flex h-full flex-col pt-12" aria-label="Client navigation">
-            <SidebarNav />
+          <div className="flex h-full flex-col" aria-label="Client navigation">
+            <div className="flex items-center justify-center border-b border-border px-3 py-5 sticky top-0 bg-card/95 backdrop-blur-sm z-10">
+              <Link href="/client/home" className="flex items-center transition-opacity hover:opacity-90 animate-logo-bounce">
+                <Image
+                  src="/images/ssit.png"
+                  alt="SSIT Tech Logo"
+                  width={80}
+                  height={80}
+                  className="h-20 w-20 shrink-0 rounded-full object-contain border-2 border-primary/20"
+                />
+              </Link>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 animate-content-fade-in smooth-scroll">
+              <SidebarNav />
+            </div>
           </div>
         </SheetContent>
       </Sheet>

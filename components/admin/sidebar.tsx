@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
@@ -112,13 +113,13 @@ function AdminSidebarNav() {
   );
 
   return (
-    <nav className="flex flex-1 flex-col gap-6 lg:gap-5 p-3 lg:p-2" aria-label="Admin navigation">
+    <nav className="flex flex-1 flex-col gap-4 md:gap-6 lg:gap-5 p-4 md:p-3 lg:p-2" aria-label="Admin navigation">
       {/* Overview */}
-      <div>
-        <p className="mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="space-y-2">
+        <p className="hidden lg:block mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Overview
         </p>
-        <ul className="space-y-0.5">
+        <ul className="space-y-1 md:space-y-0.5">
           {adminNavSections[0].links.map(({ href, label, icon: Icon }) => {
             const active = isActivePath(pathname, href);
             return (
@@ -127,10 +128,10 @@ function AdminSidebarNav() {
                   href={href}
                   onClick={closeOnNavigate}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 text-sm lg:text-xs font-medium transition-colors",
+                    "flex items-center gap-3 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 text-sm md:text-sm lg:text-xs font-medium transition-all duration-200 ease-in-out",
                     active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-xs active:scale-98"
                   )}
                 >
                   <Icon className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0" aria-hidden />
@@ -143,20 +144,20 @@ function AdminSidebarNav() {
       </div>
 
       {/* Clients/Partners */}
-      <div>
-        <p className="mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="space-y-2">
+        <p className="hidden lg:block mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Clients & Partners
         </p>
-        <ul className="space-y-0.5">
+        <ul className="space-y-1 md:space-y-0.5">
           <li>
             <Link
               href="/admin/clients"
               onClick={closeOnNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 text-sm lg:text-xs font-medium transition-colors",
+                "flex items-center gap-3 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 text-sm md:text-sm lg:text-xs font-medium transition-all duration-200 ease-in-out",
                 isClientsPath
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-xs active:scale-98"
               )}
             >
               <Users className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0" aria-hidden />
@@ -167,8 +168,8 @@ function AdminSidebarNav() {
       </div>
 
       {/* Products (dropdown with checkboxes) */}
-      <div suppressHydrationWarning>
-        <p className="mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div suppressHydrationWarning className="space-y-2">
+        <p className="hidden lg:block mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Products
         </p>
         <Collapsible open={isProductsOpen} onOpenChange={setIsProductsOpen}>
@@ -178,10 +179,10 @@ function AdminSidebarNav() {
               if (!isProductsOpen) router.push(PRODUCTS_PATH);
             }}
             className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 text-sm lg:text-xs font-medium transition-colors",
+              "flex w-full items-center gap-3 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 text-sm md:text-sm lg:text-xs font-medium transition-all duration-200 ease-in-out",
               isProductsPath
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-xs active:scale-98"
             )}
           >
             <Package className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0" aria-hidden />
@@ -191,13 +192,13 @@ function AdminSidebarNav() {
               aria-hidden
             />
           </CollapsibleTrigger>
-          <CollapsibleContent suppressHydrationWarning className="mt-0.5 space-y-0.5">
+          <CollapsibleContent suppressHydrationWarning className="mt-1 space-y-1 md:mt-0.5 md:space-y-0.5">
             {PRODUCT_CATEGORIES.map(({ id, label, icon: Icon }) => {
               const checked = selectedCategories.includes(id);
               return (
                 <div
                   key={id}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 transition-colors"
+                  className="flex items-center gap-2 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 transition-all duration-200 hover:bg-muted/60"
                 >
                   <Checkbox
                     checked={checked}
@@ -219,11 +220,11 @@ function AdminSidebarNav() {
       </div>
 
       {/* System */}
-      <div>
-        <p className="mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+      <div className="space-y-2">
+        <p className="hidden lg:block mb-1.5 px-3 text-[11px] lg:text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           System
         </p>
-        <ul className="space-y-0.5">
+        <ul className="space-y-1 md:space-y-0.5">
           {adminNavSections[1].links.map(({ href, label, icon: Icon }) => {
             const active = isActivePath(pathname, href);
             return (
@@ -232,10 +233,10 @@ function AdminSidebarNav() {
                   href={href}
                   onClick={closeOnNavigate}
                   className={cn(
-                    "flex items-center gap-3 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 text-sm lg:text-xs font-medium transition-colors",
+                    "flex items-center gap-3 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 text-sm md:text-sm lg:text-xs font-medium transition-all duration-200 ease-in-out",
                     active
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground hover:shadow-xs active:scale-98"
                   )}
                 >
                   <Icon className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0" aria-hidden />
@@ -248,11 +249,11 @@ function AdminSidebarNav() {
       </div>
 
       {/* Sign Out */}
-      <div className="mt-auto border-t border-border pt-3 lg:pt-2">
+      <div className="mt-auto border-t border-border pt-4 md:pt-3 lg:pt-2">
         <button
           onClick={handleSignOut}
           disabled={signingOut}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 lg:px-2 lg:py-1.5 text-sm lg:text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-70"
+          className="flex w-full items-center gap-3 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 text-sm md:text-sm lg:text-xs font-medium text-muted-foreground transition-all duration-200 hover:bg-muted hover:text-foreground disabled:opacity-70"
         >
           {signingOut ? (
             <Loader2 className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0 animate-spin" aria-hidden />
@@ -270,6 +271,22 @@ export function AdminSidebar() {
   const ctx = useAdminSidebar();
   const open = ctx?.open ?? false;
   const setOpen = ctx?.setOpen ?? (() => {});
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserEmail = async () => {
+      try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getUser();
+        if (data.user?.email) {
+          setUserEmail(data.user.email);
+        }
+      } catch (error) {
+        console.error("Error fetching user email:", error);
+      }
+    };
+    fetchUserEmail();
+  }, []);
 
   return (
     <>
@@ -283,12 +300,35 @@ export function AdminSidebar() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="left"
-          className="w-52 border-border bg-card p-0 md:hidden"
-          showCloseButton={true}
+          className="w-52 border-border bg-card p-0 md:hidden overflow-y-auto"
+          showCloseButton={false}
         >
           <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-          <div className="flex h-full flex-col pt-14" aria-label="Admin navigation">
-            <AdminSidebarNav />
+          <div className="flex h-full flex-col" aria-label="Admin navigation">
+            <div className="flex flex-col items-center justify-center border-b border-border px-3 py-5 sticky top-0 bg-card/95 backdrop-blur-sm z-10 space-y-3">
+              <Link href="/admin/home" className="flex items-center transition-opacity hover:opacity-90 animate-logo-bounce">
+                <Image
+                  src="/images/ssit.png"
+                  alt="SSIT Tech Logo"
+                  width={80}
+                  height={80}
+                  className="h-20 w-20 shrink-0 rounded-full object-contain border-2 border-primary/20"
+                />
+              </Link>
+              <div className="flex flex-col items-center space-y-2 animate-content-fade-in">
+                <span className="inline-block bg-primary/10 text-primary px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide animate-subtle-pulse">
+                  Admin Panel
+                </span>
+                {userEmail && (
+                  <p className="text-center text-xs text-muted-foreground truncate max-w-[140px]">
+                    {userEmail}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 animate-content-fade-in smooth-scroll">
+              <AdminSidebarNav />
+            </div>
           </div>
         </SheetContent>
       </Sheet>
