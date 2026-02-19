@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Product, ProductCategory } from "@/lib/products";
+import type { Product, ProductCategory, CategoryEntry } from "@/lib/products";
 
 const TABLE = "products";
 
@@ -16,12 +16,12 @@ type Row = {
 };
 
 function rowToProduct(r: Row): Product {
-  const category = r.category as ProductCategory;
+  const category = (r.category ?? "cctv") as ProductCategory;
   return {
     id: r.id,
     name: r.name ?? "",
     description: r.description ?? "",
-    category: category === "cctv" || category === "access_point" || category === "switch" ? category : "cctv",
+    category,
     price: Number(r.price) >= 0 ? Number(r.price) : 0,
     stocks: Number.isInteger(r.stocks) && r.stocks >= 0 ? r.stocks : 0,
     image: r.image ?? "",
@@ -103,5 +103,94 @@ export async function deleteProductAction(id: string): Promise<{ error: string |
   } catch (e) {
     const message = e instanceof Error ? e.message : "Failed to delete product";
     return { error: message };
+  }
+}
+
+// ─── Product Category Actions ─────────────────────────────────────────────────
+
+const CATEGORIES_TABLE = "product_categories";
+
+export async function getCategoriesAction(): Promise<{
+  data: CategoryEntry[];
+  error: string | null;
+}> {
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from(CATEGORIES_TABLE)
+      .select("id, name, label")
+      .order("created_at", { ascending: true });
+
+    if (error) return { data: [], error: error.message };
+    return { data: (data ?? []) as CategoryEntry[], error: null };
+  } catch (e) {
+    return { data: [], error: e instanceof Error ? e.message : "Failed to fetch categories" };
+  }
+}
+
+export async function addCategoryAction(
+  name: string,
+  label: string
+): Promise<{ data: CategoryEntry | null; error: string | null }> {
+  const slug = name.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+  const displayLabel = label.trim();
+  if (!slug || !displayLabel) return { data: null, error: "Name and label are required." };
+
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from(CATEGORIES_TABLE)
+      .insert({ name: slug, label: displayLabel })
+      .select("id, name, label")
+      .single();
+
+    if (error) {
+      if (error.code === "23505") return { data: null, error: "A category with that name already exists." };
+      return { data: null, error: error.message };
+    }
+    return { data: data as CategoryEntry, error: null };
+  } catch (e) {
+    return { data: null, error: e instanceof Error ? e.message : "Failed to add category" };
+  }
+}
+
+export async function updateCategoryAction(
+  name: string,
+  newLabel: string
+): Promise<{ error: string | null }> {
+  const label = newLabel.trim();
+  if (!label) return { error: "Label cannot be empty." };
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from(CATEGORIES_TABLE)
+      .update({ label })
+      .eq("name", name);
+    return { error: error?.message ?? null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to update category" };
+  }
+}
+
+export async function deleteCategoryAction(
+  name: string
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = createAdminClient();
+
+    // Guard: reject if products still use this category
+    const { count } = await supabase
+      .from(TABLE)
+      .select("id", { count: "exact", head: true })
+      .eq("category", name);
+
+    if ((count ?? 0) > 0) {
+      return { error: `Cannot delete: ${count} product(s) still use this category.` };
+    }
+
+    const { error } = await supabase.from(CATEGORIES_TABLE).delete().eq("name", name);
+    return { error: error?.message ?? null };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Failed to delete category" };
   }
 }

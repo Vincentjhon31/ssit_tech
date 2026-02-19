@@ -1,4 +1,6 @@
-export type ProductCategory = "cctv" | "access_point" | "switch";
+// Kept as `string` so dynamically-created categories (stored in product_categories
+// table) work without compile errors. The three built-ins are still valid values.
+export type ProductCategory = string;
 
 export type Product = {
   id: string;
@@ -24,10 +26,18 @@ export const INITIAL_PRODUCTS: Product[] = [
   { id: "9", name: "PoE Switch 16-Port", description: "16-port switch with PoE+ for cameras and access points.", category: "switch", price: 349.99, stocks: 0, image: "" },
 ];
 
-export const CATEGORY_LABELS: Record<ProductCategory, string> = {
+/** Built-in labels. UI falls back to the raw slug for custom categories. */
+export const CATEGORY_LABELS: Record<string, string> = {
   cctv: "CCTV",
   access_point: "Access point",
   switch: "Switch",
+};
+
+/** Shape of a row from the product_categories table. */
+export type CategoryEntry = {
+  id: string;
+  name: string;   // slug – used in products.category
+  label: string;  // display name
 };
 
 function normalizeProduct(p: Record<string, unknown>): Product {
@@ -38,7 +48,7 @@ function normalizeProduct(p: Record<string, unknown>): Product {
     id: typeof p.id === "string" ? p.id : "",
     name: typeof p.name === "string" ? p.name : "",
     description: typeof p.description === "string" ? p.description : "",
-    category: p.category === "cctv" || p.category === "access_point" || p.category === "switch" ? p.category : "cctv",
+    category: typeof p.category === "string" && p.category.trim() ? p.category : "cctv",
     price: typeof p.price === "number" && p.price >= 0 ? p.price : 0,
     stocks,
     image: typeof p.image === "string" ? p.image : "",

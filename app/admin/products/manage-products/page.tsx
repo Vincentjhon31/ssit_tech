@@ -9,8 +9,9 @@ import {
   addProductAction,
   updateProductAction,
   deleteProductAction,
+  getCategoriesAction,
 } from "@/app/admin/products/actions";
-import { CATEGORY_LABELS, type Product, type ProductCategory } from "@/lib/products";
+import { CATEGORY_LABELS, type Product, type ProductCategory, type CategoryEntry } from "@/lib/products";
 import { NoResultsAnimation } from "@/components/admin/no-results-animation";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,10 +25,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator, BreadcrumbPage } from "@/components/ui/breadcrumb";
 
-const CATEGORY_OPTIONS: { value: ProductCategory; label: string }[] = [
-  { value: "cctv", label: "CCTV" },
-  { value: "access_point", label: "Access point" },
-  { value: "switch", label: "Switch" },
+const BUILT_IN_CATEGORIES: CategoryEntry[] = [
+  { id: "builtin-cctv", name: "cctv", label: "CCTV" },
+  { id: "builtin-ap", name: "access_point", label: "Access point" },
+  { id: "builtin-sw", name: "switch", label: "Switch" },
 ];
 
 type FormState = {
@@ -95,6 +96,7 @@ function resizeImageIfNeeded(dataUrl: string): Promise<string> {
 
 export default function ManageProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<CategoryEntry[]>(BUILT_IN_CATEGORIES);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -121,22 +123,28 @@ export default function ManageProductsPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    getProductsAction().then(({ data, error }) => {
-      if (mounted) {
+
+    // Load products and categories in parallel
+    Promise.all([getProductsAction(), getCategoriesAction()]).then(
+      ([productsResult, categoriesResult]) => {
+        if (!mounted) return;
         setLoading(false);
-        if (error) {
-          toast.error("Failed to load products", { description: error });
-          return;
+        if (productsResult.error) {
+          toast.error("Failed to load products", { description: productsResult.error });
+        } else {
+          setProducts(productsResult.data);
         }
-        setProducts(data);
+        if (!categoriesResult.error && categoriesResult.data.length > 0) {
+          setCategories(categoriesResult.data);
+        }
       }
-    });
+    );
     return () => { mounted = false; };
   }, []);
 
   const openAdd = () => {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm, category: categories[0]?.name ?? "cctv" });
     setDialogOpen(true);
   };
 
@@ -249,7 +257,11 @@ export default function ManageProductsPage() {
     return products.filter((p) => {
       const name = p.name?.toLowerCase() ?? "";
       const description = p.description?.toLowerCase() ?? "";
-      const category = CATEGORY_LABELS[p.category]?.toLowerCase() ?? "";
+      const category = (
+        CATEGORY_LABELS[p.category] ??
+        categories.find((c) => c.name === p.category)?.label ??
+        p.category
+      ).toLowerCase();
       return (
         name.includes(query) ||
         description.includes(query) ||
@@ -310,7 +322,7 @@ export default function ManageProductsPage() {
                     startFiltering(() => setSearchTerm(value));
                   }}
                   placeholder="Search…"
-                  className="w-full rounded-full border border-input bg-muted/50 py-1.5 sm:py-2 lg:py-1.5 pl-8 sm:pl-9 lg:pl-8 pr-14 text-xs sm:text-sm lg:text-xs placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                  className="w-full rounded-full border border-foreground/40 bg-background py-1.5 sm:py-2 lg:py-1.5 pl-8 sm:pl-9 lg:pl-8 pr-14 text-xs sm:text-sm lg:text-xs placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 {searchTerm.trim().length > 0 && (
                   <button
@@ -390,7 +402,7 @@ export default function ManageProductsPage() {
                       </td>
                       <td className="hidden sm:table-cell px-3 py-2 lg:px-2 lg:py-2">
                         <span className="rounded-full bg-muted px-2.5 py-1 text-xs lg:text-[10px] font-medium text-muted-foreground inline-block">
-                          {CATEGORY_LABELS[product.category]}
+                          {CATEGORY_LABELS[product.category] ?? categories.find((c) => c.name === product.category)?.label ?? product.category}
                         </span>
                       </td>
                       <td className="hidden sm:table-cell px-3 py-2 lg:px-2 lg:py-2">
@@ -510,9 +522,9 @@ export default function ManageProductsPage() {
                 }
                 className="w-full rounded-full border border-input bg-muted/50 py-1.5 sm:py-2 lg:py-1.5 px-2 sm:px-3 lg:px-2 text-xs sm:text-sm lg:text-xs focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                {CATEGORY_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
+                {categories.map((cat) => (
+                  <option key={cat.name} value={cat.name}>
+                    {cat.label}
                   </option>
                 ))}
               </select>

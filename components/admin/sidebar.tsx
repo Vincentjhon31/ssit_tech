@@ -3,16 +3,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, useCallback } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import {
   LayoutDashboard,
   Users,
   FileCheck,
   Package,
-  Camera,
-  Wifi,
-  Network,
   Settings,
   ChevronDown,
   LogOut,
@@ -28,12 +25,7 @@ import {
 } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAdminSidebar } from "@/components/admin/sidebar-context";
-
-const PRODUCT_CATEGORIES = [
-  { id: "cctv" as const, label: "CCTV", icon: Camera },
-  { id: "access_point" as const, label: "Access point", icon: Wifi },
-  { id: "switch" as const, label: "Switch", icon: Network },
-] as const;
+import type { CategoryEntry } from "@/lib/products";
 
 const PRODUCTS_PATH = "/admin/products";
 
@@ -63,7 +55,7 @@ function parseCategoriesFromUrl(searchParams: ReturnType<typeof useSearchParams>
   return raw.split(",").map((s) => s.trim()).filter(Boolean);
 }
 
-function AdminSidebarNav() {
+function AdminSidebarNav({ categories }: { categories: CategoryEntry[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -193,28 +185,31 @@ function AdminSidebarNav() {
             />
           </CollapsibleTrigger>
           <CollapsibleContent suppressHydrationWarning className="mt-1 space-y-1 md:mt-0.5 md:space-y-0.5">
-            {PRODUCT_CATEGORIES.map(({ id, label, icon: Icon }) => {
-              const checked = selectedCategories.includes(id);
-              return (
-                <div
-                  key={id}
-                  className="flex items-center gap-2 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 transition-all duration-200 hover:bg-muted/60"
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={toggleCategory(id)}
-                    onClick={(e) => e.stopPropagation()}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="shrink-0"
-                    aria-label={`Filter by ${label}`}
-                  />
-                  <span className="flex min-w-0 flex-1 items-center gap-3 py-0.5 text-sm lg:text-xs font-medium text-muted-foreground">
-                    <Icon className="h-4 w-4 lg:h-3.5 lg:w-3.5 shrink-0" aria-hidden />
-                    <span className="truncate">{label}</span>
-                  </span>
-                </div>
-              );
-            })}
+            {categories.length === 0 ? (
+              <p className="px-3 py-2 text-xs text-muted-foreground/60">No categories</p>
+            ) : (
+              categories.map(({ name, label }) => {
+                const checked = selectedCategories.includes(name);
+                return (
+                  <div
+                    key={name}
+                    className="flex items-center gap-2 rounded-md px-3 py-2 md:px-3 md:py-2 lg:px-2 lg:py-1.5 transition-all duration-200 hover:bg-muted/60"
+                  >
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={toggleCategory(name)}
+                      onClick={(e) => e.stopPropagation()}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      className="shrink-0 border-foreground/40 bg-background"
+                      aria-label={`Filter by ${label}`}
+                    />
+                    <span className="truncate py-0.5 text-sm lg:text-xs font-medium text-muted-foreground">
+                      {label}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </CollapsibleContent>
         </Collapsible>
       </div>
@@ -267,34 +262,26 @@ function AdminSidebarNav() {
   );
 }
 
-export function AdminSidebar() {
+export function AdminSidebar({
+  initialCategories = [],
+  userEmail = null,
+}: {
+  initialCategories?: CategoryEntry[];
+  userEmail?: string | null;
+}) {
   const ctx = useAdminSidebar();
   const open = ctx?.open ?? false;
   const setOpen = ctx?.setOpen ?? (() => {});
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchUserEmail = async () => {
-      try {
-        const supabase = createClient();
-        const { data } = await supabase.auth.getUser();
-        if (data.user?.email) {
-          setUserEmail(data.user.email);
-        }
-      } catch (error) {
-        console.error("Error fetching user email:", error);
-      }
-    };
-    fetchUserEmail();
-  }, []);
 
   return (
     <>
       <aside
-        className="hidden h-full w-52 shrink-0 flex-col border-r border-border bg-card md:flex"
+        className="hidden h-full w-52 shrink-0 flex-col overflow-y-auto border-r border-border bg-card md:flex"
         aria-label="Admin navigation"
       >
-        <AdminSidebarNav />
+        <Suspense fallback={null}>
+          <AdminSidebarNav categories={initialCategories} />
+        </Suspense>
       </aside>
 
       <Sheet open={open} onOpenChange={setOpen}>
@@ -327,7 +314,9 @@ export function AdminSidebar() {
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 animate-content-fade-in smooth-scroll">
-              <AdminSidebarNav />
+              <Suspense fallback={null}>
+                <AdminSidebarNav categories={initialCategories} />
+              </Suspense>
             </div>
           </div>
         </SheetContent>

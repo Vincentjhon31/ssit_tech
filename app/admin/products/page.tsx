@@ -2,11 +2,17 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState, useEffect, useTransition } from "react";
-import { LayoutGrid, List, Package, FilterX, Search } from "lucide-react";
+import { useMemo, useState, useEffect, useTransition, type ReactNode } from "react";
+import { LayoutGrid, List, Package, FilterX, Search, Camera, Wifi, Network } from "lucide-react";
 import { getProductsAction } from "@/app/admin/products/actions";
 import { CATEGORY_LABELS, type Product, type ProductCategory } from "@/lib/products";
 import { NoResultsAnimation } from "@/components/admin/no-results-animation";
+
+const CATEGORY_ICONS: Record<string, ReactNode> = {
+  cctv: <Camera className="size-3.5" />,
+  access_point: <Wifi className="size-3.5" />,
+  switch: <Network className="size-3.5" />,
+};
 
 function parseCategories(searchParams: ReturnType<typeof useSearchParams>): ProductCategory[] {
   const raw = searchParams.get("categories");
@@ -73,6 +79,19 @@ export default function AdminProductsPage() {
     return byText.slice(0, 8);
   }, [products, searchTerm]);
 
+  const groupedProducts = useMemo(() => {
+    const categoryOrder = (Object.keys(CATEGORY_LABELS) as (keyof typeof CATEGORY_LABELS)[]).sort(
+      (a, b) => CATEGORY_LABELS[a].localeCompare(CATEGORY_LABELS[b])
+    );
+    return categoryOrder
+      .map((cat) => ({
+        category: cat,
+        label: CATEGORY_LABELS[cat],
+        items: filteredProducts.filter((p) => p.category === cat),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [filteredProducts]);
+
   const priceStr = (p: Product) =>
     typeof p.price === "number" ? p.price.toFixed(2) : "0.00";
   const imageUrl = (p: Product) => (p.image && p.image.trim() ? p.image.trim() : null);
@@ -103,7 +122,7 @@ export default function AdminProductsPage() {
                 setTimeout(() => setShowSuggestions(false), 100);
               }}
               placeholder="Search…"
-              className="w-full rounded-full border border-input bg-muted/50 py-1.5 sm:py-2 lg:py-1.5 pl-8 sm:pl-9 lg:pl-8 pr-14 text-xs sm:text-sm lg:text-xs placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-full border border-foreground/40 bg-background py-1.5 sm:py-2 lg:py-1.5 pl-8 sm:pl-9 lg:pl-8 pr-14 text-xs sm:text-sm lg:text-xs placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
             {searchTerm.trim().length > 0 && (
               <button
@@ -238,92 +257,123 @@ export default function AdminProductsPage() {
           </div>
         )}
         {!loading && viewMode === "grid" && (
-          <ul className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredProducts.map((product) => (
-              <li
-                key={product.id}
-                className="rounded-lg border border-border bg-card overflow-hidden shadow-sm transition-shadow hover:shadow"
-              >
-                {imageUrl(product) && (
-                  <div className="relative aspect-[4/3] w-full bg-muted">
-                    <img
-                      src={imageUrl(product)!}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="p-2 sm:p-4 lg:p-2">
-                  <p className="font-medium text-sm sm:text-base lg:text-sm text-foreground">{product.name}</p>
-                  {product.description && (
-                    <p className="mt-0.5 sm:mt-1 lg:mt-0.5 text-xs sm:text-sm lg:text-xs text-muted-foreground line-clamp-2">{product.description}</p>
-                  )}
-                  <div className="mt-1 sm:mt-2 lg:mt-1 flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-1">
-                    <span className="rounded-full bg-muted px-1.5 sm:px-2 lg:px-1 py-0.5 text-xs lg:text-[10px] font-medium text-muted-foreground">
-                      {CATEGORY_LABELS[product.category]}
+          <div className="space-y-8">
+            {groupedProducts.map((group) => (
+              <section key={group.category}>
+                <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="inline-flex items-center justify-center rounded-md bg-primary/10 p-1.5 text-primary">
+                      {CATEGORY_ICONS[group.category]}
                     </span>
-                    <span className="font-semibold text-xs sm:text-sm lg:text-xs text-foreground">₱{priceStr(product)}</span>
-                    <span className="text-muted-foreground text-xs lg:text-[10px]">Stocks: {typeof product.stocks === "number" ? product.stocks : 0}</span>
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                      {group.label}
+                    </h2>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] sm:text-xs font-medium text-muted-foreground">
+                      {group.items.length}
+                    </span>
                   </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
                 </div>
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {!loading && viewMode === "list" && (
-          <div className="rounded-lg border border-border bg-card overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Image</th>
-                  <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Description</th>
-                  <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Category</th>
-                  <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Price</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-4 lg:px-3 lg:py-3">
-                      <div className="h-32 sm:h-40 w-32 sm:w-40 shrink-0 overflow-hidden rounded-md bg-muted">
-                        {imageUrl(product) ? (
+                <ul className="grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                  {group.items.map((product) => (
+                    <li
+                      key={product.id}
+                      className="rounded-lg border border-border bg-card overflow-hidden shadow-sm transition-shadow hover:shadow"
+                    >
+                      {imageUrl(product) && (
+                        <div className="relative aspect-[4/3] w-full bg-muted">
                           <img
                             src={imageUrl(product)!}
                             alt=""
                             className="h-full w-full object-cover"
                           />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs px-1">
-                            No image
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 lg:px-3 lg:py-3">
-                      <div className="max-w-sm">
-                        <p className="font-medium text-sm lg:text-xs text-foreground mb-1">{product.name}</p>
+                        </div>
+                      )}
+                      <div className="p-2 sm:p-4 lg:p-2">
+                        <p className="font-medium text-sm sm:text-base lg:text-sm text-foreground">{product.name}</p>
                         {product.description && (
-                          <p className="text-xs lg:text-[10px] text-muted-foreground line-clamp-3">{product.description}</p>
+                          <p className="mt-0.5 sm:mt-1 lg:mt-0.5 text-xs sm:text-sm lg:text-xs text-muted-foreground line-clamp-2">{product.description}</p>
                         )}
+                        <div className="mt-1 sm:mt-2 lg:mt-1 flex flex-wrap items-center gap-1 sm:gap-2 lg:gap-1">
+                          <span className="font-semibold text-xs sm:text-sm lg:text-xs text-foreground">₱{priceStr(product)}</span>
+                          <span className="text-muted-foreground text-xs lg:text-[10px]">Stocks: {typeof product.stocks === "number" ? product.stocks : 0}</span>
+                        </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-4 lg:px-3 lg:py-3">
-                      <span className="rounded-full bg-muted px-2.5 py-1 text-xs lg:text-[10px] font-medium text-muted-foreground inline-block">
-                        {CATEGORY_LABELS[product.category]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 lg:px-3 lg:py-3">
-                      <span className="font-semibold text-sm lg:text-xs text-foreground">₱{priceStr(product)}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ))}
           </div>
         )}
 
-        {!loading && filteredProducts.length === 0 && (
+        {!loading && viewMode === "list" && (
+          <div className="space-y-8">
+            {groupedProducts.map((group) => (
+              <section key={group.category}>
+                <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="inline-flex items-center justify-center rounded-md bg-primary/10 p-1.5 text-primary">
+                      {CATEGORY_ICONS[group.category]}
+                    </span>
+                    <h2 className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+                      {group.label}
+                    </h2>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] sm:text-xs font-medium text-muted-foreground">
+                      {group.items.length}
+                    </span>
+                  </div>
+                  <div className="flex-1 h-px bg-gradient-to-r from-border to-transparent" />
+                </div>
+                <div className="rounded-lg border border-border bg-card overflow-hidden">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/50">
+                        <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Image</th>
+                        <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Description</th>
+                        <th className="px-4 py-3 lg:px-3 lg:py-2 text-left font-medium text-sm lg:text-xs text-foreground">Price</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.items.map((product) => (
+                        <tr key={product.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                          <td className="px-4 py-4 lg:px-3 lg:py-3">
+                            <div className="h-32 sm:h-40 w-32 sm:w-40 shrink-0 overflow-hidden rounded-md bg-muted">
+                              {imageUrl(product) ? (
+                                <img
+                                  src={imageUrl(product)!}
+                                  alt=""
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs px-1">
+                                  No image
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 lg:px-3 lg:py-3">
+                            <div className="max-w-sm">
+                              <p className="font-medium text-sm lg:text-xs text-foreground mb-1">{product.name}</p>
+                              {product.description && (
+                                <p className="text-xs lg:text-[10px] text-muted-foreground line-clamp-3">{product.description}</p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 lg:px-3 lg:py-3">
+                            <span className="font-semibold text-sm lg:text-xs text-foreground">₱{priceStr(product)}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {!loading && groupedProducts.length === 0 && (
           <NoResultsAnimation 
             message={categories.length > 0 ? "No products match your filters" : "No products yet"}
             isSearching={searchTerm.trim().length > 0 || categories.length > 0}
