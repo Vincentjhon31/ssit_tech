@@ -3,43 +3,43 @@ import { CtaSection } from "@/components/cta-section";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100 font-sans text-zinc-900">
+    <main className="min-h-screen bg-gray-100 pb-20 font-sans text-zinc-900 lg:pb-0">
       <HeroSection />
 
       {/* Features */}
-      <section id="features" className="px-6 py-12 md:px-8 md:py-14">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-center text-2xl font-semibold tracking-tight text-zinc-900 md:text-2xl">
-            Everything you need
+      <section id="features" className="px-6 py-16 md:px-10 md:py-24">
+        <div className="mx-auto max-w-6xl">
+          <h2 className="text-center text-3xl font-bold tracking-tight text-zinc-900 md:text-5xl">
+            Why choose SSIT Tech
           </h2>
-          <p className="mx-auto mt-3 max-w-lg text-center text-sm leading-relaxed text-zinc-500 md:text-sm">
-            Onboard clients, manage credentials, and stay audit-ready — all
-            without spreadsheets or email threads.
+          <p className="mx-auto mt-5 max-w-2xl text-center text-base leading-relaxed text-zinc-500 md:text-lg">
+            We deliver premium networking, surveillance, and communication solutions
+            with expert support and competitive pricing for businesses of all sizes.
           </p>
 
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
+          <div className="mt-14 grid gap-6 md:grid-cols-3">
             {[
               {
-                title: "Guided applications",
-                desc: "Collect the right information the first time with clear steps and document uploads.",
+                title: "Quality Assurance",
+                desc: "Every product meets rigorous standards. We partner with industry-leading brands and thoroughly vet every solution.",
               },
               {
-                title: "Live credentials",
-                desc: "See expirations, missing documents, and approval status at a glance.",
+                title: "Expert Team",
+                desc: "Our specialists provide knowledgeable guidance to help you choose the right technology for your unique needs.",
               },
               {
-                title: "Custom workflows",
-                desc: "Route applications to the right reviewers and capture a full audit trail.",
+                title: "Flexible Solutions",
+                desc: "From small deployments to enterprise installations, we scale our offerings to match your project requirements.",
               },
             ].map((f) => (
               <div
                 key={f.title}
-                className="rounded-xl border border-zinc-100 p-6 transition hover:border-zinc-200 hover:shadow-sm"
+                className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm transition hover:border-zinc-300 hover:shadow-md"
               >
-                <h3 className="text-sm font-semibold text-zinc-900">
+                <h3 className="text-lg font-bold text-zinc-900">
                   {f.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                <p className="mt-3 text-base leading-relaxed text-zinc-500">
                   {f.desc}
                 </p>
               </div>

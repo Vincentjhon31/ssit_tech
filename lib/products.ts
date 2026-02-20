@@ -31,7 +31,6 @@ export const INITIAL_PRODUCTS: Product[] = [
 export const CATEGORY_LABELS: Record<string, string> = {
   cctv: "CCTV",
   access_point: "Access point",
-  switch: "Switch",
 };
 
 /** Shape of a row from the product_categories table. */

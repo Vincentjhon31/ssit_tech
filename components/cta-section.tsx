@@ -59,7 +59,7 @@ export function CtaSection() {
           viewport={{ once: true }}
           transition={{ duration: 0.7, delay: 0.1 }}
         >
-          Ready to streamline your client network?
+          Ready to upgrade your network infrastructure?
         </motion.h2>
 
         <motion.p
