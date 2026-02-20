@@ -184,7 +184,7 @@ export default async function ClientSettingsStatusPage() {
               <Avatar 
                 name={fullName} 
                 email={email} 
-                imageSrc="/images/Formal_Attire_Benj.png"
+                imageSrc={userMetadata.avatar_url || undefined}
               />
             </div>
 

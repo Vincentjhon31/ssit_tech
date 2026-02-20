@@ -17,15 +17,17 @@ export default async function ClientProfilePageRoute() {
   if (!user) {
     redirect("/unauthenticated");
   }
-  const meta = user.user_metadata || {};
 
+  const meta = user.user_metadata || {};
   const fullName = (meta.full_name as string | undefined) || "";
   const avatarUrl = (meta.avatar_url as string | undefined) || "";
-  const company = (meta.company as string | undefined) || "";
-  const phone = (meta.phone as string | undefined) || "";
-  const location = (meta.location as string | undefined) || "";
-  const website = (meta.website as string | undefined) || "";
-  const bio = (meta.bio as string | undefined) || "";
+
+  // Load extended profile from the profiles table (not from JWT/user_metadata)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("company, phone, location, website, bio")
+    .eq("id", user.id)
+    .single();
 
   return (
     <ClientProfilePage
@@ -37,11 +39,11 @@ export default async function ClientProfilePageRoute() {
       initialProfile={{
         fullName,
         avatarUrl,
-        company,
-        phone,
-        location,
-        website,
-        bio,
+        company: profile?.company || "",
+        phone: profile?.phone || "",
+        location: profile?.location || "",
+        website: profile?.website || "",
+        bio: profile?.bio || "",
       }}
     />
   );

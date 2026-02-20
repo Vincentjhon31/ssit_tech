@@ -17,36 +17,40 @@ export function ClientHeaderWrapper() {
 
   useEffect(() => {
     const supabase = createClient();
-    
-    // Get initial user data
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        setUserData({
-          email: user.email,
-          name: user.user_metadata?.full_name || user.user_metadata?.name,
-          avatar: user.user_metadata?.avatar_url,
-          company: user.user_metadata?.company,
-          phone: user.user_metadata?.phone,
-          location: user.user_metadata?.location,
-          emailVerified: user.email_confirmed_at !== null,
-        });
-      }
-    });
+
+    async function loadUserData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      // Load extended profile from the profiles table
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("company, phone, location")
+        .eq("id", user.id)
+        .single();
+
+      setUserData({
+        email: user.email,
+        name: user.user_metadata?.full_name || user.user_metadata?.name,
+        avatar: user.user_metadata?.avatar_url,
+        company: profile?.company || "",
+        phone: profile?.phone || "",
+        location: profile?.location || "",
+        emailVerified: user.email_confirmed_at !== null,
+      });
+    }
+
+    loadUserData();
 
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        setUserData({
-          email: session.user.email,
-          name: session.user.user_metadata?.full_name || session.user.user_metadata?.name,
-          avatar: session.user.user_metadata?.avatar_url,
-          company: session.user.user_metadata?.company,
-          phone: session.user.user_metadata?.phone,
-          location: session.user.user_metadata?.location,
-          emailVerified: session.user.email_confirmed_at !== null,
-        });
+        // Reload profile data on auth change
+        loadUserData();
       }
     });
 

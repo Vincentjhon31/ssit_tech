@@ -1,12 +1,13 @@
 "use client";
 
 import type { ElementType, ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
   Building2,
   Calendar,
+  Camera,
   CheckCircle2,
   Clock,
   Globe,
@@ -47,7 +48,11 @@ function formatDate(value: string) {
   if (!value) return "N/A";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "N/A";
-  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  return d.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function formatDateTime(value: string) {
@@ -74,10 +79,12 @@ function Avatar({
   name,
   email,
   imageSrc,
+  onUploadClick,
 }: {
   name?: string;
   email?: string;
   imageSrc?: string;
+  onUploadClick?: () => void;
 }) {
   const initials = name
     ? name
@@ -88,11 +95,23 @@ function Avatar({
         .toUpperCase()
         .slice(0, 2)
     : email
-    ? email[0]?.toUpperCase()
-    : "U";
+      ? email[0]?.toUpperCase()
+      : "U";
 
   return (
-    <div className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-primary shadow-sm ring-4 ring-background">
+    <div
+      className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full bg-primary shadow-sm ring-4 ring-background group cursor-pointer"
+      onClick={onUploadClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onUploadClick?.();
+        }
+      }}
+      title="Click to change profile picture"
+    >
       {imageSrc ? (
         <Image
           src={imageSrc}
@@ -103,8 +122,14 @@ function Avatar({
           priority
         />
       ) : (
-        <span className="text-3xl font-semibold text-primary-foreground">{initials}</span>
+        <span className="text-3xl font-semibold text-primary-foreground">
+          {initials}
+        </span>
       )}
+      {/* Camera overlay */}
+      <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+        <Camera className="h-6 w-6 text-white" />
+      </div>
     </div>
   );
 }
@@ -124,8 +149,13 @@ function Field({
 }) {
   return (
     <div className="space-y-2">
-      <label htmlFor={id} className="flex items-center gap-2 text-sm font-semibold">
-        {Icon ? <Icon className="h-4 w-4 text-muted-foreground" aria-hidden /> : null}
+      <label
+        htmlFor={id}
+        className="flex items-center gap-2 text-sm font-semibold"
+      >
+        {Icon ? (
+          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+        ) : null}
         <span>{label}</span>
       </label>
       {children}
@@ -158,6 +188,59 @@ export default function ClientProfilePage({
   const [baseline, setBaseline] = useState<ProfileFormState>(initialProfile);
   const [form, setForm] = useState<ProfileFormState>(initialProfile);
   const [saving, setSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleAvatarUpload() {
+    fileInputRef.current?.click();
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image must be under 10MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onload = () => {
+        const MAX_SIZE = 300;
+        let w = img.width;
+        let h = img.height;
+        if (w > MAX_SIZE || h > MAX_SIZE) {
+          if (w > h) {
+            h = Math.round((h * MAX_SIZE) / w);
+            w = MAX_SIZE;
+          } else {
+            w = Math.round((w * MAX_SIZE) / h);
+            h = MAX_SIZE;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+        setForm((p) => ({ ...p, avatarUrl: dataUrl }));
+        toast.success("Avatar updated — save to apply");
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+
+    // Reset so selecting the same file triggers onChange again
+    e.target.value = "";
+  }
 
   const displayName = form.fullName?.trim() || email?.split("@")[0] || "User";
 
@@ -185,16 +268,29 @@ export default function ClientProfilePage({
         website: normalizeWebsite(form.website),
       };
 
-      const { error } = await supabase.auth.updateUser({
+      // Only store minimal fields in user_metadata (keeps JWT/cookie small)
+      const { error: authError } = await supabase.auth.updateUser({
         data: {
           full_name: payload.fullName,
           avatar_url: payload.avatarUrl,
-          company: payload.company,
-          phone: payload.phone,
-          location: payload.location,
-          website: payload.website,
-          bio: payload.bio,
         },
+      });
+
+      if (authError) {
+        toast.error("Could not save profile", {
+          description: authError.message,
+        });
+        return;
+      }
+
+      // Store extended profile data in the profiles table (not in JWT)
+      const { error } = await supabase.from("profiles").upsert({
+        id: userId,
+        company: payload.company,
+        phone: payload.phone,
+        location: payload.location,
+        website: payload.website,
+        bio: payload.bio,
       });
 
       if (error) {
@@ -225,7 +321,8 @@ export default function ClientProfilePage({
           <div className="space-y-1">
             <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
             <p className="text-sm text-muted-foreground">
-              Manage your personal info and how it appears across the client portal.
+              Manage your personal info and how it appears across the client
+              portal.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -248,14 +345,33 @@ export default function ClientProfilePage({
                   <User className="h-5 w-5 text-primary" aria-hidden />
                   Overview
                 </CardTitle>
-                <CardDescription>Your public-facing profile summary.</CardDescription>
+                <CardDescription>
+                  Your public-facing profile summary.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-5">
+                {/* Hidden file input for avatar upload */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
                 <div className="flex items-center gap-4">
-                  <Avatar name={displayName} email={email} imageSrc={form.avatarUrl || undefined} />
+                  <Avatar
+                    name={displayName}
+                    email={email}
+                    imageSrc={form.avatarUrl || undefined}
+                    onUploadClick={handleAvatarUpload}
+                  />
                   <div className="min-w-0">
-                    <p className="truncate text-lg font-semibold">{displayName}</p>
-                    <p className="truncate text-sm text-muted-foreground">{email || "No email"}</p>
+                    <p className="truncate text-lg font-semibold">
+                      {displayName}
+                    </p>
+                    <p className="truncate text-sm text-muted-foreground">
+                      {email || "No email"}
+                    </p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       {emailVerified ? (
                         <Badge className="gap-1.5">
@@ -280,7 +396,9 @@ export default function ClientProfilePage({
 
                 {form.bio ? (
                   <div className="rounded-lg border border-border bg-muted/40 p-4">
-                    <p className="text-sm leading-relaxed text-foreground">{form.bio}</p>
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {form.bio}
+                    </p>
                   </div>
                 ) : (
                   <Alert>
@@ -299,7 +417,9 @@ export default function ClientProfilePage({
                   <IdCard className="h-5 w-5 text-primary" aria-hidden />
                   Account
                 </CardTitle>
-                <CardDescription>Helpful details about your sign-in.</CardDescription>
+                <CardDescription>
+                  Helpful details about your sign-in.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between border-b border-border pb-3">
@@ -309,16 +429,26 @@ export default function ClientProfilePage({
                   </span>
                 </div>
                 <div className="flex items-center justify-between border-b border-border pb-3">
-                  <span className="text-sm text-muted-foreground">Provider</span>
-                  <span className="text-sm font-medium capitalize">{provider || "email"}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Provider
+                  </span>
+                  <span className="text-sm font-medium capitalize">
+                    {provider || "email"}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <span className="text-sm text-muted-foreground">Created</span>
-                  <span className="text-sm font-medium">{formatDateTime(createdAt)}</span>
+                  <span className="text-sm font-medium">
+                    {formatDateTime(createdAt)}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Email status</span>
-                  <span className="text-sm font-medium">{emailVerified ? "Verified" : "Pending"}</span>
+                  <span className="text-sm text-muted-foreground">
+                    Email status
+                  </span>
+                  <span className="text-sm font-medium">
+                    {emailVerified ? "Verified" : "Pending"}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -332,7 +462,7 @@ export default function ClientProfilePage({
                   Edit profile
                 </CardTitle>
                 <CardDescription>
-                  Updates are saved to your Supabase user metadata.
+                  Updates are saved to your profile.
                 </CardDescription>
               </CardHeader>
 
@@ -343,13 +473,20 @@ export default function ClientProfilePage({
                       id="fullName"
                       className={inputClassName}
                       value={form.fullName}
-                      onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, fullName: e.target.value }))
+                      }
                       placeholder="e.g. Jane Doe"
                       autoComplete="name"
                     />
                   </Field>
 
-                  <Field label="Email" id="email" icon={Mail} hint="Email is managed by your login provider.">
+                  <Field
+                    label="Email"
+                    id="email"
+                    icon={Mail}
+                    hint="Email is managed by your login provider."
+                  >
                     <input
                       id="email"
                       className={cn(inputClassName, "bg-muted/40")}
@@ -366,7 +503,9 @@ export default function ClientProfilePage({
                       id="company"
                       className={inputClassName}
                       value={form.company}
-                      onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, company: e.target.value }))
+                      }
                       placeholder="e.g. SSIT Tech"
                       autoComplete="organization"
                     />
@@ -377,7 +516,9 @@ export default function ClientProfilePage({
                       id="phone"
                       className={inputClassName}
                       value={form.phone}
-                      onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, phone: e.target.value }))
+                      }
                       placeholder="e.g. +1 555 123 4567"
                       autoComplete="tel"
                     />
@@ -388,18 +529,27 @@ export default function ClientProfilePage({
                       id="location"
                       className={inputClassName}
                       value={form.location}
-                      onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, location: e.target.value }))
+                      }
                       placeholder="e.g. New York, NY"
                       autoComplete="address-level2"
                     />
                   </Field>
 
-                  <Field label="Website" id="website" icon={Globe} hint="We’ll automatically add https:// if needed.">
+                  <Field
+                    label="Website"
+                    id="website"
+                    icon={Globe}
+                    hint="We’ll automatically add https:// if needed."
+                  >
                     <input
                       id="website"
                       className={inputClassName}
                       value={form.website}
-                      onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
+                      onChange={(e) =>
+                        setForm((p) => ({ ...p, website: e.target.value }))
+                      }
                       placeholder="e.g. ssit-tech.com"
                       inputMode="url"
                       autoComplete="url"
@@ -407,33 +557,25 @@ export default function ClientProfilePage({
                   </Field>
                 </div>
 
-                <Field label="Bio" id="bio" hint="Optional. Keep it short and helpful for support." icon={User}>
+                <Field
+                  label="Bio"
+                  id="bio"
+                  hint="Optional. Keep it short and helpful for support."
+                  icon={User}
+                >
                   <textarea
                     id="bio"
                     className={textareaClassName}
                     value={form.bio}
-                    onChange={(e) => setForm((p) => ({ ...p, bio: e.target.value }))}
+                    onChange={(e) =>
+                      setForm((p) => ({ ...p, bio: e.target.value }))
+                    }
                     placeholder="Tell us a little about yourself…"
                     maxLength={280}
                   />
                 </Field>
 
-                <Field
-                  label="Avatar URL"
-                  id="avatarUrl"
-                  hint="Optional. Paste a public image URL."
-                  icon={User}
-                >
-                  <input
-                    id="avatarUrl"
-                    className={inputClassName}
-                    value={form.avatarUrl}
-                    onChange={(e) => setForm((p) => ({ ...p, avatarUrl: e.target.value }))}
-                    placeholder="https://…"
-                    inputMode="url"
-                    autoComplete="photo"
-                  />
-                </Field>
+
               </CardContent>
 
               <CardFooter className="border-t justify-between gap-3">
@@ -461,4 +603,3 @@ export default function ClientProfilePage({
     </main>
   );
 }
-

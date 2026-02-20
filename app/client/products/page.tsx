@@ -1,14 +1,27 @@
 "use client";
 
 import { useMemo, useState, useEffect, useTransition } from "react";
-import { LayoutGrid, List, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LayoutGrid, List, Search, X, ShoppingCart, Package } from "lucide-react";
 import { getProductsAction, getCategoriesAction } from "@/app/admin/products/actions";
 import { CATEGORY_LABELS, type Product, type ProductCategory, type CategoryEntry } from "@/lib/products";
 import { NoResultsAnimation } from "@/components/admin/no-results-animation";
+import { BarcodeDisplay } from "@/components/barcode-display";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type ViewMode = "grid" | "list";
 
 export default function ProductsPage() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [dbCategories, setDbCategories] = useState<CategoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,6 +29,7 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isFiltering, startFiltering] = useTransition();
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -262,14 +276,23 @@ export default function ProductsPage() {
                   {group.items.map((product) => (
                     <li
                       key={product.id}
-                      className="rounded-lg border border-border bg-card overflow-hidden shadow-sm transition-shadow hover:shadow"
+                      className="rounded-lg border border-border bg-card overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-primary/30 cursor-pointer group"
+                      onClick={() => setSelectedProduct(product)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          setSelectedProduct(product);
+                        }
+                      }}
                     >
                       {imageUrl(product) && (
-                        <div className="relative aspect-[4/3] w-full bg-muted">
+                        <div className="relative aspect-[4/3] w-full bg-muted overflow-hidden">
                           <img
                             src={imageUrl(product)!}
                             alt=""
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                           />
                         </div>
                       )}
@@ -355,7 +378,19 @@ export default function ProductsPage() {
                     </thead>
                     <tbody>
                       {group.items.map((product) => (
-                        <tr key={product.id} className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors">
+                        <tr
+                          key={product.id}
+                          className="border-b border-border last:border-0 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => setSelectedProduct(product)}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedProduct(product);
+                            }
+                          }}
+                        >
                           <td className="px-4 py-4 lg:px-3 lg:py-3">
                             <div className="h-32 sm:h-40 w-32 sm:w-40 shrink-0 overflow-hidden rounded-md bg-muted">
                               {imageUrl(product) ? (
@@ -400,6 +435,118 @@ export default function ProductsPage() {
         )}
       </div>
     </div>
+
+      {/* Product Detail Modal */}
+      <Dialog
+        open={!!selectedProduct}
+        onOpenChange={(open) => {
+          if (!open) setSelectedProduct(null);
+        }}
+      >
+        <DialogContent className="max-w-lg sm:max-w-xl max-h-[90vh] overflow-y-auto">
+          {selectedProduct && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="text-lg">
+                  {selectedProduct.name}
+                </DialogTitle>
+                <DialogDescription>Product Details</DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                {/* Image */}
+                {imageUrl(selectedProduct) && (
+                  <div className="relative aspect-[16/10] w-full overflow-hidden rounded-lg bg-muted">
+                    <img
+                      src={imageUrl(selectedProduct)!}
+                      alt={selectedProduct.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
+
+                {/* Info grid */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Category
+                    </p>
+                    <Badge variant="secondary">
+                      {categoryLabels[selectedProduct.category] ??
+                        selectedProduct.category}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Price
+                    </p>
+                    <p className="text-lg font-bold">
+                      ₱{priceStr(selectedProduct)}
+                    </p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Stocks Available
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {typeof selectedProduct.stocks === "number"
+                        ? selectedProduct.stocks
+                        : 0}{" "}
+                      units
+                    </p>
+                  </div>
+                  {selectedProduct.barcode && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground font-medium">
+                        Barcode
+                      </p>
+                      <BarcodeDisplay
+                        value={selectedProduct.barcode}
+                        height={35}
+                        barWidth={1.2}
+                        fontSize={10}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                {selectedProduct.description && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Description
+                    </p>
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {selectedProduct.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  onClick={() => setSelectedProduct(null)}
+                >
+                  Close
+                </Button>
+                <Button
+                  className="gap-2"
+                  onClick={() => {
+                    setSelectedProduct(null);
+                    router.push(
+                      `/client/orders?product=${selectedProduct.id}`,
+                    );
+                  }}
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  Submit Inquiry
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
